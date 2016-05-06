@@ -1,4 +1,4 @@
-/*
+/*n
  * SCHED_WEIGHTED_RR scheduling class. Implements a round robin scheduler with weight
  * priority mechanism.
  */
@@ -31,9 +31,14 @@ static void update_curr_weighted_rr(struct rq *rq)
  */
 static void enqueue_task_weighted_rr(struct rq *rq, struct task_struct *p, int wakeup, bool b)
 {
-	// not yet implemented
+    //I don't know what wakeup and b means
+    //Try to see sched_rt.c line 885, sched_fair.c line 1038
+    struct weighted_rr_rq *wrr_rq = &(rq->weighted_rr);
+    if (wakeup)
+        p->task_time_slice = p->weighted_time_slice;
 
-	// ...
+    list_add(&(p->weighted_rr_list_item), &(wrr_rq->queue));
+    wrr_rq->nr_running ++;
 }
 
 static void dequeue_task_weighted_rr(struct rq *rq, struct task_struct *p, int sleep)
