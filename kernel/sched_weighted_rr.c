@@ -1,4 +1,4 @@
-/*n
+/*
  * SCHED_WEIGHTED_RR scheduling class. Implements a round robin scheduler with weight
  * priority mechanism.
  */
@@ -34,10 +34,9 @@ static void enqueue_task_weighted_rr(struct rq *rq, struct task_struct *p, int w
     //I don't know what wakeup and b means
     //Try to see sched_rt.c line 885, sched_fair.c line 1038
     struct weighted_rr_rq *wrr_rq = &(rq->weighted_rr);
-    if (wakeup)
-        p->task_time_slice = p->weighted_time_slice;
+    p->task_time_slice = p->weighted_time_slice;
 
-    list_add(&(p->weighted_rr_list_item), &(wrr_rq->queue));
+    list_add_tail(&(p->weighted_rr_list_item), &(wrr_rq->queue));
     wrr_rq->nr_running ++;
 }
 
@@ -45,8 +44,12 @@ static void dequeue_task_weighted_rr(struct rq *rq, struct task_struct *p, int s
 {
 	// first update the task's runtime statistics
 	update_curr_weighted_rr(rq);
-	// not yet implemented
+	//I don't konw what sleep means
+    struct weighted_rr_rq *wrr_rq = &(rq->weighted_rr);
+    p->task_time_slice = 0;
 
+    list_del(&(p->weighted_rr_list_item));
+    wrr_rq->nr_running --;
 	// ...
 }
 
@@ -66,12 +69,15 @@ static void
 yield_task_weighted_rr(struct rq *rq)
 {
 	// not yet implemented
-
+    struct task_struct *p = rq->curr;
+    p->task_time_slice = p->weighted_time_slice;
+    requeue_task_weighted_rr(rq, p);
+    set_tsk_need_resched(p);
 	// ...
 }
 
 /*
- * Preempt the current task with a newly woken task if needed:
+ * Preempt the current task with a newly woken task if eeeded:
  * int wakeflags added to match function signature of other schedulers
  */
 static void check_preempt_curr_weighted_rr(struct rq *rq, struct task_struct *p, int wakeflags)
@@ -84,16 +90,15 @@ static void check_preempt_curr_weighted_rr(struct rq *rq, struct task_struct *p,
 static struct task_struct *pick_next_task_weighted_rr(struct rq *rq)
 {
 	struct task_struct *next;
-	struct list_head *queue;
-	struct weighted_rr_rq *weighted_rr_rq;
-	
-	
-	// not yet implemented
-
-	// ...
+	struct weighted_rr_rq *weighted_rr_rq = &(rq->weighted_rr);
+	struct list_head *queue = &(weighted_rr_rq->queue);
+	if(list_empty(queue))
+        return NULL;
+    next = list_first_entry(queue, struct task_struct, weighted_rr_list_item);
+    next->se.exec_start = rq->clock;
 	
 	/* you need to return the selected task here */
-	return NULL;
+	return next;
 }
 
 static void put_prev_task_weighted_rr(struct rq *rq, struct task_struct *p)
@@ -190,7 +195,14 @@ static void task_tick_weighted_rr(struct rq *rq, struct task_struct *p,int queue
 	update_curr_weighted_rr(rq);
 
 	// not yet implemented
-
+    if(!task_has_weighted_rr_policy(p)) return;
+    p->task_time_slice --;
+    if(p->task_time_slice <= 0)
+    {
+       p->task_time_slice = p->weighted_time_slice;
+       requeue_task_weighted_rr(rq ,p);
+       set_tsk_need_resched(p);
+    }
 	// ...
 	 
 	return;	
