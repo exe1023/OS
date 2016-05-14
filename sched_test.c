@@ -28,7 +28,7 @@ void Busy(void)
 
 void *RunSleep(void *num)
 {
-  int thrnum = *((int *)num);
+  int thrnum = (int)num;
   for(int i = 0 ; i < 3 ; i++) {
     printf("Thread %d is running.\n", thrnum);
     Busy();
@@ -52,14 +52,11 @@ int main(int argc, char **argv)
   printf("Sched policy = %d\n" , sched_getscheduler(0));
 
   pthread_t pthreads[threadnum];
-  int thr_id[threadnum];
-  for(int i = 0 ; i < threadnum ; i++) {
-    thr_id[i] = i;
-    if(pthread_create(&pthreads[i], NULL, RunSleep, (void *)&thr_id[i]) != 0) {
+  for(int thr_id = 0 ; thr_id < threadnum ; thr_id++) {
+    if(pthread_create(&pthreads[thr_id], NULL, RunSleep, (void *)thr_id) != 0)
       error("create thread error\n");
-    }
     else
-      printf("Thread %d was created.\n", i);
+      printf("Thread %d was created.\n", thr_id);
   }
   for(int i = 0 ; i < threadnum ; i++)
     pthread_join(pthreads[i], NULL);
